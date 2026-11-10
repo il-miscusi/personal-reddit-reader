@@ -1,0 +1,9 @@
+[project]
+name = "reddit-api"
+version = "0.1.0"
+description = "Personal read access to my Reddit account via PRAW"
+requires-python = ">=3.11"
+dependencies = [
+    "praw>=7.8",
+    "python-dotenv>=1.0",
+]
