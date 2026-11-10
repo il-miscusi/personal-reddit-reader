@@ -23,5 +23,17 @@ uv run reddit.py comments --limit 0 --json > exports/comments.json
 uv run reddit.py posts | upvoted | inbox | subs
 ```
 
+## Saved items via private RSS (no API key)
+
+Reddit stopped issuing new API keys in November 2025 and has announced that RSS ends on
+2026-11-13. Until then, the private "saved" feed at https://www.reddit.com/prefs/feeds returns the
+title and text of saved posts and comments. Put that link in `.env` as `REDDIT_SAVED_RSS`, then:
+
+```
+uv run rss_saved.py --export path/to/unzipped/reddit-export
+```
+
+Results go to `exports/saved_rss.json` (gitignored).
+
 Listings are capped by Reddit at roughly 1000 items. For full history, use the data export at
 https://www.reddit.com/settings/data-request.
