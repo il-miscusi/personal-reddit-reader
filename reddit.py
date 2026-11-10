@@ -18,6 +18,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import sys
 from datetime import datetime, timezone
 
@@ -41,6 +42,14 @@ def client() -> praw.Reddit:
         user_agent=f"script:personal-reddit-reader:0.1 (by /u/{user})",
         check_for_async=False,
     )
+
+
+_CONTROL = re.compile(r"[\x00-\x1f\x7f-\x9f]")
+
+
+def clean(s) -> str:
+    """Drop control characters (incl. ESC) so text written by other users can't drive the terminal."""
+    return _CONTROL.sub(" ", str(s))
 
 
 def ts(utc: float) -> str:
@@ -83,11 +92,11 @@ def show(items, as_json: bool) -> None:
         print(json.dumps(rows, indent=2, ensure_ascii=False))
         return
     for r in rows:
-        head = r.get("title") or (r["text"][:100].replace("\n", " ") if r.get("text") else "")
+        head = r.get("title") or r.get("subject") or (r.get("text") or "")[:100]
         where = f"r/{r['subreddit']}" if "subreddit" in r else f"from {r.get('from')}"
-        print(f"{r['date']}  [{r['kind']}] {where}  {head}")
+        print(f"{r['date']}  [{r['kind']}] {clean(where)}  {clean(head)}")
         if "url" in r:
-            print(f"            {r['url']}")
+            print(f"            {clean(r['url'])}")
     print(f"\n{len(rows)} items")
 
 
@@ -103,7 +112,7 @@ def main() -> None:
     limit = None if a.limit == 0 else a.limit
 
     if a.command == "whoami":
-        print(f"u/{me.name}  karma: {me.link_karma} post / {me.comment_karma} comment  joined {ts(me.created_utc)}")
+        print(f"u/{clean(me.name)}  karma: {me.link_karma} post / {me.comment_karma} comment  joined {ts(me.created_utc)}")
     elif a.command == "saved":
         show(me.saved(limit=limit), a.json)
     elif a.command == "comments":
@@ -116,7 +125,7 @@ def main() -> None:
         show(r.inbox.all(limit=limit), a.json)
     elif a.command == "subs":
         names = sorted(str(s) for s in r.user.subreddits(limit=None))
-        print(json.dumps(names, indent=2) if a.json else "\n".join(f"r/{n}" for n in names))
+        print(json.dumps(names, indent=2) if a.json else "\n".join(f"r/{clean(n)}" for n in names))
         if not a.json:
             print(f"\n{len(names)} subreddits")
 
